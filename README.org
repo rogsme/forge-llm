@@ -1,0 +1,225 @@
+#+TITLE: forge-llm
+#+AUTHOR: Roger Gonzalez
+#+EMAIL: roger@rogs.me
+
+* forge-llm
+:PROPERTIES:
+:ID:       81db1fd1-a5db-4201-9113-72889f7c7829
+:END:
+
+Generate Pull Request descriptions for Forge using LLM providers through the [[https://github.com/ahyatt/llm][llm]] package.
+
+** Overview
+:PROPERTIES:
+:ID:       e5e5a1d0-cf5a-4f45-8d4c-f2f75339bf9a
+:END:
+
+~forge-llm~ is an Emacs package that integrates Large Language Models (LLMs) with Forge, a Magit interface to GitHub and GitLab forges. This package helps you generate high-quality Pull Request descriptions based on your git diff and repository PR templates.
+
+Main features:
+- Automatically finds and uses your repository's PR template
+- Generates PR descriptions based on git diffs between branches
+- Seamless integration with Forge's PR creation workflow
+- Supports any LLM provider supported by the ~llm~ package
+
+** Dependencies
+:PROPERTIES:
+:ID:       f30fedc1-a24a-4308-bc78-6f9c01857c18
+:END:
+
+- [[https://magit.vc/][Magit]] and [[https://github.com/magit/forge][Forge]]
+- [[https://github.com/ahyatt/llm][llm]]
+- Emacs 25.1+
+
+** Installation
+:PROPERTIES:
+:ID:       a4cfca4c-6029-445a-9e1d-88293ddaaff7
+:END:
+
+*** Using straight.el with use-package
+:PROPERTIES:
+:ID:       0c4a74cd-f752-4b3f-a729-0cc5a34f3d38
+:END:
+
+#+begin_src emacs-lisp
+(use-package forge-llm
+  :straight (:host gitlab :repo "rogs/forge-llm")
+  :after forge
+  :config
+  (forge-llm-setup))
+#+end_src
+
+*** Using MELPA (once available)
+:PROPERTIES:
+:ID:       0e561e53-10f6-4a0b-90e3-46094124aeb2
+:END:
+
+#+begin_src emacs-lisp
+(use-package forge-llm
+  :ensure t
+  :after forge
+  :config
+  (forge-llm-setup))
+#+end_src
+
+*** Manual installation
+:PROPERTIES:
+:ID:       b91cfecf-04a3-43c8-96d3-dea082e5ed6e
+:END:
+
+Clone the repository:
+
+#+begin_src shell
+git clone https://gitlab.com/rogs/forge-llm.git ~/.emacs.d/site-lisp/forge-llm
+#+end_src
+
+Add to your Emacs configuration:
+
+#+begin_src emacs-lisp
+(add-to-list 'load-path "~/.emacs.d/site-lisp/forge-llm")
+(require 'forge-llm)
+(forge-llm-setup)
+#+end_src
+
+** Setting up LLM providers
+:PROPERTIES:
+:ID:       842282e1-4760-4687-96a1-4c15adb9a13d
+:END:
+
+~forge-llm~ depends on the [[https://github.com/ahyatt/llm][llm]] package for LLM integration. You'll need to set up at least one LLM provider. Please refer to the [[https://github.com/ahyatt/llm?tab=readme-ov-file#setting-up-providers][llm documentation]] for detailed instructions.
+
+*** Example: OpenAI provider
+:PROPERTIES:
+:ID:       108c5560-65ad-49e1-8c02-d4c0493bb2b2
+:END:
+
+First, create an [[https://platform.openai.com/account/api-keys][OpenAI API key]]. Then configure the ~llm~ OpenAI provider:
+
+#+begin_src emacs-lisp
+(require 'llm-openai)
+(setq forge-llm-llm-provider (make-llm-openai :key "YOUR-OPENAI-KEY"))
+#+end_src
+
+*** Using auth-source for API keys (recommended)
+:PROPERTIES:
+:ID:       59f84b84-ce44-4208-8531-56992cae847e
+:END:
+
+For better security, use Emacs ~auth-source~ to store your API keys:
+
+#+begin_src emacs-lisp
+(use-package llm
+  :ensure t
+  :config
+  (setq llm-warn-on-nonfree nil))
+
+(use-package forge-llm
+  :straight (:host gitlab :repo "rogs/forge-llm")
+  :after (forge llm)
+  :custom
+  (forge-llm-llm-provider
+   (make-llm-openai :key
+                    (auth-info-password
+                     (car (auth-source-search
+                           :host "api.openai.com"
+                           :user "apikey")))))
+  :config
+  (forge-llm-setup))
+#+end_src
+
+Content of ~.authinfo~ or ~.authinfo.gpg~:
+#+begin_src
+machine api.openai.com login apikey password YOUR-API-KEY-HERE
+#+end_src
+
+** Usage
+:PROPERTIES:
+:ID:       e6753914-01ee-41e9-bcdf-f3d6e75ee451
+:END:
+
+After setting up ~forge-llm~, the following commands will be available in Forge's pull request creation buffer:
+
+| Key binding | Command                                    | Description                                           |
+|-------------+--------------------------------------------+-------------------------------------------------------|
+| C-c C-g     | forge-llm-generate-pr-description          | Generate a PR description (output to separate buffer) |
+| C-c C-p     | forge-llm-generate-pr-description-at-point | Generate a PR description at the current point        |
+| C-c C-t     | forge-llm-insert-template-at-point         | Insert the PR template at the current point           |
+
+Workflow:
+1. Create a PR using Forge as normal (~forge-create-pullreq~)
+2. In the PR creation buffer, position your cursor where you want to insert the PR description
+3. Press ~C-c C-p~ to generate and insert a PR description based on your changes
+4. Edit the description as needed and submit the PR
+
+** Customization
+:PROPERTIES:
+:ID:       baff250b-65a2-48cf-ace8-af38996bd865
+:END:
+
+You can customize various aspects of ~forge-llm~ through the following variables:
+
+*** PR Template Configuration
+:PROPERTIES:
+:ID:       ccb75625-c64d-47ad-adbe-77862b4ebbb5
+:END:
+
+- ~forge-llm-pr-template-paths~ - List of possible paths for PR/MR templates relative to repo root
+  #+begin_src emacs-lisp
+  (setq forge-llm-pr-template-paths
+        '(".github/PULL_REQUEST_TEMPLATE.md"
+          ".github/pull_request_template.md"
+          "docs/pull_request_template.md"
+          ".gitlab/merge_request_templates/default.md"))
+  #+end_src
+
+- ~forge-llm-default-pr-template~ - Default PR template to use when no template is found in the repository
+
+*** LLM Provider Configuration
+:PROPERTIES:
+:ID:       8c3c77fb-a6ae-47bb-8c2b-2b82c2364d81
+:END:
+
+- ~forge-llm-llm-provider~ - LLM provider to use. Can be a provider object or a function that returns a provider object
+  #+begin_src emacs-lisp
+  (setq forge-llm-llm-provider (make-llm-openai :key "YOUR-API-KEY"))
+  #+end_src
+
+- ~forge-llm-temperature~ - Temperature for LLM responses (nil for provider default)
+  #+begin_src emacs-lisp
+  (setq forge-llm-temperature 0.7)
+  #+end_src
+
+- ~forge-llm-max-tokens~ - Maximum number of tokens for LLM responses (nil for provider default)
+  #+begin_src emacs-lisp
+  (setq forge-llm-max-tokens 1024)
+  #+end_src
+
+*** Prompt Configuration
+:PROPERTIES:
+:ID:       f0cb4a2b-d919-4fe0-b286-317b93084174
+:END:
+
+- ~forge-llm-pr-description-prompt~ - Prompt used to generate a PR description with the LLM
+
+** Troubleshooting
+:PROPERTIES:
+:ID:       30489ac7-98ed-4820-a780-83c239e427f6
+:END:
+
+- If you're having issues with the LLM provider, you can enable debug logging for ~llm~ by setting ~llm-log~ to ~t~.
+- Check the ~*forge-llm-debug-prompt*~ buffer to see the exact prompt being sent to the LLM.
+- Check the ~*forge-llm-output*~ buffer to see the raw output from the LLM.
+
+** Contributing
+:PROPERTIES:
+:ID:       398ecc9e-30c2-4af4-afc5-c793ab3bedaa
+:END:
+
+Contributions are welcome! Please feel free to submit a Merge Request.
+
+** License
+:PROPERTIES:
+:ID:       14189649-a22f-4cf8-9850-9a8bb62456d3
+:END:
+
+This project is licensed under the GNU General Public License version 3 - see the LICENSE file for details.
