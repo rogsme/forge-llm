@@ -79,50 +79,9 @@
              (string-match-p "new-pullreq" buffer-file-name))
     (local-set-key (kbd "C-c C-l") #'forge-llm-hello)
     (local-set-key (kbd "C-c C-d") #'forge-llm-debug)
-    (local-set-key (kbd "C-c C-g") #'forge-llm-generate-story)
+    (local-set-key (kbd "C-c C-g") #'forge-llm-generate-pr-description)
     (local-set-key (kbd "C-c C-t") #'forge-llm-insert-template-at-point)))
 
-;;; LLM Integration
-
-(defcustom forge-llm-llm-provider nil
-  "LLM provider to use.
-Can be a provider object or a function that returns a provider object."
-  :type '(choice
-          (sexp :tag "LLM provider")
-          (function :tag "Function that returns an LLM provider"))
-  :group 'forge-llm)
-
-(defcustom forge-llm-temperature nil
-  "Temperature for LLM responses.
-If nil, the default temperature of the LLM provider will be used."
-  :type '(choice (const :tag "Use provider default" nil)
-                (float :tag "Custom temperature"))
-  :group 'forge-llm)
-
-(defcustom forge-llm-max-tokens nil
-  "Maximum number of tokens for LLM responses.
-If nil, the default max tokens of the LLM provider will be used."
-  :type '(choice (const :tag "Use provider default" nil)
-                (integer :tag "Custom max tokens"))
-  :group 'forge-llm)
-
-(defcustom forge-llm-short-story-prompt
-  "Write a short story (250-300 words) about an open source developer who discovers something unexpected while working on a pull request.
-
-   The story should be professional, concise, and have a clear beginning, middle, and conclusion."
-  "Prompt used to generate a short story with the LLM."
-  :type 'string
-  :group 'forge-llm)
-
-(defun forge-llm--get-provider ()
-  "Return the LLM provider to use.
-If `forge-llm-llm-provider' is a function, call it to get the provider.
-Otherwise, return the value directly."
-  (if (functionp forge-llm-llm-provider)
-      (funcall forge-llm-llm-provider)
-    forge-llm-llm-provider))
-
-;;;###autoload
 ;;; PR Template Handling
 
 (defcustom forge-llm-pr-template-paths
@@ -198,6 +157,88 @@ Updates `forge-llm--pr-template-path' with the found template path."
       (unless template-path
         (message "No PR template found in repository")))))
 
+;;; LLM Integration
+
+(defcustom forge-llm-llm-provider nil
+  "LLM provider to use.
+Can be a provider object or a function that returns a provider object."
+  :type '(choice
+          (sexp :tag "LLM provider")
+          (function :tag "Function that returns an LLM provider"))
+  :group 'forge-llm)
+
+(defcustom forge-llm-temperature nil
+  "Temperature for LLM responses.
+If nil, the default temperature of the LLM provider will be used."
+  :type '(choice (const :tag "Use provider default" nil)
+                (float :tag "Custom temperature"))
+  :group 'forge-llm)
+
+(defcustom forge-llm-max-tokens nil
+  "Maximum number of tokens for LLM responses.
+If nil, the default max tokens of the LLM provider will be used."
+  :type '(choice (const :tag "Use provider default" nil)
+                (integer :tag "Custom max tokens"))
+  :group 'forge-llm)
+
+(defcustom forge-llm-pr-description-prompt
+  "Please help write a professional Pull Request description based on the following information.
+
+INSTRUCTIONS:
+1. Follow the PR template structure exactly - do not modify, add or remove sections
+2. Fill each section with relevant content based on the git diff
+3. Mark sections as 'N/A' if they don't apply to this specific PR
+4. Focus on the logic and functionality changes, not on test implementation details
+5. Be clear and concise, but provide enough detail for reviewers to understand the changes
+6. Use bullet points for lists of changes where appropriate
+
+%s
+
+Git diff:
+```
+%s
+```
+
+Please generate the complete PR description, ready to submit."
+  "Prompt used to generate a PR description with the LLM.
+This will be formatted with the PR template (or default template) and git diff."
+  :type 'string
+  :group 'forge-llm)
+
+(defcustom forge-llm-default-pr-template
+  "## Description
+<!-- Provide a clear and concise description of the changes -->
+
+## Type of change
+<!-- What types of changes does your code introduce? Put an 'x' in all boxes that apply -->
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Documentation update
+- [ ] Refactoring (no functional changes)
+
+## How Has This Been Tested?
+<!-- Describe how you tested your changes -->
+
+## Checklist
+- [ ] My code follows the project's style guidelines
+- [ ] I have performed a self-review of my code
+- [ ] I have added tests that prove my fix is effective or my feature works
+- [ ] New and existing tests pass with my changes"
+  "Default PR template to use when no template is found in the repository."
+  :type 'string
+  :group 'forge-llm)
+
+(defun forge-llm--get-provider ()
+  "Return the LLM provider to use.
+If `forge-llm-llm-provider' is a function, call it to get the provider.
+Otherwise, return the value directly."
+  (if (functionp forge-llm-llm-provider)
+      (funcall forge-llm-llm-provider)
+    forge-llm-llm-provider))
+
+;;; Stream handling
+
 (defvar forge-llm--active-request nil
   "The active LLM request, if any.")
 
@@ -235,27 +276,69 @@ ERROR-MSG is the error message, if any."
     (setq forge-llm--active-request nil)
     (message "LLM request canceled")))
 
-(defun forge-llm-generate-story ()
-  "Generate a short story using LLM and display it in a buffer.
+(defun forge-llm-generate-pr-description ()
+  "Generate a PR description based on the current git diff and PR template.
 Only works in Forge pull request buffers."
   (interactive)
   (if (not (derived-mode-p 'forge-post-mode))
       (message "Not in a Forge pull request buffer")
     (if-let ((provider (forge-llm--get-provider)))
         (progn
-          (message "Generating story with LLM...")
-          (let ((buffer (get-buffer-create "*forge-llm-output*")))
-            ;; Initialize buffer
+          (message "Generating PR description with LLM...")
+          (let* ((buffer (get-buffer-create "*forge-llm-output*"))
+                 (head (and (boundp 'forge--buffer-head-branch) forge--buffer-head-branch))
+                 (base (and (boundp 'forge--buffer-base-branch) forge--buffer-base-branch))
+                 (default-directory (file-name-directory
+                                    (directory-file-name
+                                     (file-name-directory
+                                      (or buffer-file-name default-directory)))))
+                 (repo-root (locate-dominating-file default-directory ".git"))
+                 diff-output
+                 template-content)
+
+            ;; Get git diff
+            (when (and repo-root head base)
+              (let ((default-directory repo-root))
+                (with-temp-buffer
+                  (call-process "git" nil t nil "diff" base head)
+                  (setq diff-output (buffer-string)))))
+
+            ;; If diff is too large, trim it
+            (when (and diff-output (> (length diff-output) 12000))
+              (setq diff-output (substring diff-output 0 12000))
+              (setq diff-output (concat diff-output "\n\n... [diff truncated due to size] ...")))
+
+            ;; Find PR template
+            (when repo-root
+              (let ((default-directory repo-root)
+                    (template-path (cl-find-if #'file-exists-p forge-llm-pr-template-paths)))
+                (when template-path
+                  (with-temp-buffer
+                    (insert-file-contents (expand-file-name template-path repo-root))
+                    (setq template-content (buffer-string))))))
+
+            ;; Use default template if none found
+            (unless template-content
+              (setq template-content forge-llm-default-pr-template))
+
+            ;; Initialize output buffer
             (with-current-buffer buffer
               (let ((inhibit-read-only t))
                 (erase-buffer)
-                (insert "# Short Story Generated by LLM\n\n")
-                (insert "Generating...")
+                (insert "# Generating PR Description\n\n")
+                (insert "Analyzing diff between: ")
+                (when (and head base)
+                  (insert (format "%s → %s\n\n" head base)))
                 (display-buffer buffer)))
 
-            ;; Create a proper chat prompt
-            (let ((prompt (llm-make-simple-chat-prompt forge-llm-short-story-prompt)))
-              ;; Set temperature and max tokens if supported
+            ;; Create prompt with template and diff
+            (let* ((pr-section (format "PR template:\n%s" template-content))
+                   (formatted-prompt (format forge-llm-pr-description-prompt
+                                             pr-section
+                                             (or diff-output "[No diff available]")))
+                   (prompt (llm-make-simple-chat-prompt formatted-prompt)))
+
+              ;; Set LLM parameters
               (when forge-llm-temperature
                 (setf (llm-chat-prompt-temperature prompt) forge-llm-temperature))
               (when forge-llm-max-tokens
@@ -283,17 +366,11 @@ Only works in Forge pull request buffers."
                        (setq forge-llm--active-request nil)))))))
       (user-error "No LLM provider configured. Set `forge-llm-llm-provider' first"))))
 
-;; Add a key binding to the forge-llm keybinding
-(defun forge-llm-setup-story-key ()
-  "Add key binding for generating stories with LLM."
-  (interactive)
-  (define-key forge-post-mode-map (kbd "C-c C-g") 'forge-llm-generate-story))
-
 ;;;###autoload
 (defun forge-llm-setup-all ()
   "Set up all forge-llm integrations."
   (interactive)
   (forge-llm-setup)  ; Set up the basic PR branch info
-  (forge-llm-setup-story-key))  ; Set up the story generation key
+  (message "All forge-llm integrations have been set up"))
 
 (provide 'forge-llm)
