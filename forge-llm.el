@@ -80,6 +80,7 @@
     (local-set-key (kbd "C-c C-l") #'forge-llm-hello)
     (local-set-key (kbd "C-c C-d") #'forge-llm-debug)
     (local-set-key (kbd "C-c C-g") #'forge-llm-generate-pr-description)
+    (local-set-key (kbd "C-c C-p") #'forge-llm-generate-pr-description-at-point)
     (local-set-key (kbd "C-c C-t") #'forge-llm-insert-template-at-point)))
 
 ;;; PR Template Handling
@@ -251,7 +252,10 @@ BUFFER is the target buffer."
       (let ((inhibit-read-only t))
         (erase-buffer)
         (insert "# Generated PR Description\n\n")
-        (insert msg)))))
+        (insert msg)
+        ;; If markdown-mode is available, set the buffer mode
+        (when (require 'markdown-mode nil t)
+          (markdown-mode))))))
 
 (defun forge-llm--stream-update-status (status buffer &optional error-msg)
   "Update status of the streaming response.
@@ -266,7 +270,9 @@ ERROR-MSG is the error message, if any."
         (pcase status
           ('success (insert "--- Generation complete ---"))
           ('error (insert (format "Error: %s" error-msg))))
-        (text-mode)))))
+        ;; Set buffer to markdown-mode
+        (when (require 'markdown-mode nil t)
+          (markdown-mode))))))
 
 (defun forge-llm-cancel-request ()
   "Cancel the active LLM request, if any."
@@ -355,6 +361,9 @@ Only works in Forge pull request buffers."
                 (insert "Analyzing diff between: ")
                 (when (and head base)
                   (insert (format "%s → %s\n\n" head base)))
+                ;; Enable markdown mode right away if available
+                (when (require 'markdown-mode nil t)
+                  (markdown-mode))
                 (display-buffer buffer)))
 
             ;; Create prompt with template and diff
@@ -401,6 +410,130 @@ Only works in Forge pull request buffers."
                        (lambda (err-msg)
                          (forge-llm--stream-update-status 'error buffer err-msg)
                          (setq forge-llm--active-request nil))))))))
+      (user-error "No LLM provider configured. Set `forge-llm-llm-provider' first"))))
+
+(defun forge-llm-generate-pr-description-at-point ()
+  "Generate a PR description and insert at current point, replacing any content after point.
+Only works in Forge pull request buffers."
+  (interactive)
+  (if (not (derived-mode-p 'forge-post-mode))
+      (message "Not in a Forge pull request buffer")
+    (if-let ((provider (forge-llm--get-provider)))
+        (progn
+          (message "Generating PR description at point with LLM...")
+          (let* ((head (and (boundp 'forge--buffer-head-branch) forge--buffer-head-branch))
+                 (base (and (boundp 'forge--buffer-base-branch) forge--buffer-base-branch))
+                 (default-directory (file-name-directory
+                                    (directory-file-name
+                                     (file-name-directory
+                                      (or buffer-file-name default-directory)))))
+                 (repo-root (locate-dominating-file default-directory ".git"))
+                 (current-point (point))
+                 diff-output
+                 template-content
+                 template-path)
+
+            ;; Delete everything after point
+            (delete-region current-point (point-max))
+
+            ;; Insert a placeholder
+            (insert "\n\n[Generating PR description...]\n\n")
+            (let ((placeholder-start current-point)
+                  (placeholder-end (point)))
+
+              ;; Get git diff
+              (when (and repo-root head base)
+                (let ((default-directory repo-root))
+                  (with-temp-buffer
+                    (call-process "git" nil t nil "diff" base head)
+                    (setq diff-output (buffer-string)))))
+
+              ;; If diff is too large, trim it
+              (when (and diff-output (> (length diff-output) 12000))
+                (setq diff-output (substring diff-output 0 12000))
+                (setq diff-output (concat diff-output "\n\n... [diff truncated due to size] ...")))
+
+              ;; Find PR template with debugging
+              (when repo-root
+                (let ((default-directory repo-root))
+                  ;; Try to find the template
+                  (setq template-path (cl-find-if #'file-exists-p forge-llm-pr-template-paths))
+
+                  (when template-path
+                    (message "Found template at: %s" template-path)
+                    (condition-case err
+                        (with-temp-buffer
+                          (insert-file-contents (expand-file-name template-path repo-root))
+                          (setq template-content (buffer-string)))
+                      (error (message "Error reading template: %s" err))))))
+
+              ;; Use default template if none found
+              (unless template-content
+                (setq template-content forge-llm-default-pr-template)
+                (message "Using default template"))
+
+              ;; Log template info
+              (message "Using template: %s"
+                       (if (equal template-content forge-llm-default-pr-template)
+                           "default template (no repository template found)"
+                           (format "repository template at %s" template-path)))
+
+              ;; Create prompt with template and diff
+              (let* ((pr-section (format "PR template:\n%s" template-content))
+                     (formatted-prompt (format forge-llm-pr-description-prompt
+                                              pr-section
+                                              (or diff-output "[No diff available]"))))
+
+                ;; Log prompt to debug buffer
+                (with-current-buffer (get-buffer-create "*forge-llm-debug-prompt*")
+                  (let ((inhibit-read-only t))
+                    (erase-buffer)
+                    (insert "=== PR DESCRIPTION PROMPT ===\n\n")
+                    (insert formatted-prompt)
+                    (goto-char (point-min))))
+
+                (message "Prompt prepared - see *forge-llm-debug-prompt* buffer for details")
+
+                ;; Create LLM prompt object
+                (let ((prompt (llm-make-simple-chat-prompt formatted-prompt)))
+                  ;; Set LLM parameters
+                  (when forge-llm-temperature
+                    (setf (llm-chat-prompt-temperature prompt) forge-llm-temperature))
+                  (when forge-llm-max-tokens
+                    (setf (llm-chat-prompt-max-tokens prompt) forge-llm-max-tokens))
+
+                  ;; Cancel any existing request
+                  (when forge-llm--active-request
+                    (llm-cancel-request forge-llm--active-request)
+                    (setq forge-llm--active-request nil))
+
+                  ;; Start new streaming request for in-buffer generation
+                  (setq forge-llm--active-request
+                        (llm-chat-streaming
+                         provider prompt
+                         ;; Partial callback - called for each chunk
+                         (lambda (partial-response)
+                           (save-excursion
+                             (let ((inhibit-read-only t))
+                               ;; Replace placeholder with response
+                               (delete-region placeholder-start placeholder-end)
+                               (goto-char placeholder-start)
+                               (insert "\n\n")
+                               (insert partial-response)
+                               (setq placeholder-end (point)))))
+                         ;; Complete callback - called when done
+                         (lambda (_full-response)
+                           (save-excursion
+                             (goto-char placeholder-end)
+                             (insert "\n\n")
+                             (setq forge-llm--active-request nil))
+                           (message "PR description generation complete"))
+                         ;; Error callback
+                         (lambda (err-msg)
+                           (save-excursion
+                             (goto-char placeholder-end)
+                             (insert (format "\n\nError: %s" err-msg))
+                             (setq forge-llm--active-request nil))))))))))
       (user-error "No LLM provider configured. Set `forge-llm-llm-provider' first"))))
 
 ;;;###autoload
