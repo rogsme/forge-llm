@@ -208,6 +208,7 @@ You can customize various aspects of ~forge-llm~ through the following variables
 - Add example gif or video in the description
 - Add Doom emacs keybindings
 - Add a logo for the project
+- Change script to a literate config, for readability
 - Maybe a small one-page website?
 - Maybe more?
 
