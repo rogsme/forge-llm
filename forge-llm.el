@@ -2,14 +2,36 @@
 
 ;;;###autoload
 (defun forge-llm-hello ()
-  "Display pull request branch information when called in a Forge PR buffer."
+  "Display pull request branch information and show git diff in a Forge PR buffer."
   (interactive)
   (if (not (derived-mode-p 'forge-post-mode))
       (message "Not in a Forge pull request buffer")
     (let ((head (and (boundp 'forge--buffer-head-branch) forge--buffer-head-branch))
           (base (and (boundp 'forge--buffer-base-branch) forge--buffer-base-branch)))
       (if (and head base)
-          (message "Pull Request: %s → %s" head base)
+          (let* ((default-directory (file-name-directory
+                                     (directory-file-name
+                                      (file-name-directory
+                                       (or buffer-file-name default-directory)))))
+                 (pr-desc (format "Pull Request: %s → %s" head base))
+                 (repo-root (locate-dominating-file default-directory ".git")))
+            ;; First show the PR branches in the message area
+            (message "%s" pr-desc)
+
+            ;; Now create a buffer with the git diff
+            (when repo-root
+              (let ((diff-command (format "git diff %s..%s" base head))
+                    (buffer (get-buffer-create "*forge-llm-diff*")))
+                (with-current-buffer buffer
+                  (setq buffer-read-only nil)
+                  (erase-buffer)
+                  (insert (format "Diff for %s\n\n" pr-desc))
+                  (let ((default-directory repo-root))
+                    (call-process-shell-command diff-command nil buffer))
+                  (diff-mode)
+                  (setq buffer-read-only t)
+                  (goto-char (point-min)))
+                (display-buffer buffer))))
         (message "Branch information not available")))))
 
 ;;;###autoload
