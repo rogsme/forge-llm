@@ -9,6 +9,8 @@
 
 Generate Pull Request descriptions for Forge using LLM providers through the [[https://github.com/ahyatt/llm][llm]] package.
 
+[[https://gitlab.com/uploads/-/system/project/avatar/67959042/logo.png]]
+
 ** Overview
 :PROPERTIES:
 :ID:       e5e5a1d0-cf5a-4f45-8d4c-f2f75339bf9a
