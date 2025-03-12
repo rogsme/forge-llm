@@ -21,6 +21,7 @@ Main features:
 - Generates PR descriptions based on git diffs between branches
 - Seamless integration with Forge's PR creation workflow
 - Supports any LLM provider supported by the ~llm~ package
+- Stream LLM responses in real-time
 
 ** Dependencies
 :PROPERTIES:
@@ -100,6 +101,18 @@ First, create an [[https://platform.openai.com/account/api-keys][OpenAI API key]
 (setq forge-llm-llm-provider (make-llm-openai :key "YOUR-OPENAI-KEY"))
 #+end_src
 
+*** Example: Anthropic provider
+:PROPERTIES:
+:ID:       b9728ac5-f5c0-4d6b-8d3e-a4b7c3d9e1f0
+:END:
+
+To use Claude models from Anthropic:
+
+#+begin_src emacs-lisp
+(require 'llm-claude)
+(setq forge-llm-llm-provider (make-llm-claude :key "YOUR-ANTHROPIC-KEY" :chat-model "claude-3-7-sonnet-20250219"))
+#+end_src
+
 *** Using auth-source for API keys (recommended)
 :PROPERTIES:
 :ID:       59f84b84-ce44-4208-8531-56992cae847e
@@ -113,16 +126,17 @@ For better security, use Emacs ~auth-source~ to store your API keys:
   :config
   (setq llm-warn-on-nonfree nil))
 
+(require 'llm-openai)
+
 (use-package forge-llm
-  :straight (:host gitlab :repo "rogs/forge-llm")
+  :ensure t
   :after (forge llm)
   :custom
   (forge-llm-llm-provider
-   (make-llm-openai :key
-                    (auth-info-password
-                     (car (auth-source-search
-                           :host "api.openai.com"
-                           :user "apikey")))))
+   (make-llm-openai
+    :key (auth-source-pick-first-password
+           :host "api.openai.com"
+           :user "apikey")))
   :config
   (forge-llm-setup))
 #+end_src
@@ -145,11 +159,21 @@ After setting up ~forge-llm~, the following commands will be available in Forge'
 | C-c C-p     | forge-llm-generate-pr-description-at-point | Generate a PR description at the current point        |
 | C-c C-t     | forge-llm-insert-template-at-point         | Insert the PR template at the current point           |
 
-Workflow:
+*** Workflow:
+:PROPERTIES:
+:ID:       d745d788-793a-4847-95d7-4f5105bc654d
+:END:
 1. Create a PR using Forge as normal (~forge-create-pullreq~)
 2. In the PR creation buffer, position your cursor where you want to insert the PR description
 3. Press ~C-c C-p~ to generate and insert a PR description based on your changes
 4. Edit the description as needed and submit the PR
+
+*** Canceling Generation:
+:PROPERTIES:
+:ID:       7ddfeaab-31a3-4476-b770-7c9751566d88
+:END:
+If you need to cancel an in-progress LLM request:
+- ~M-x forge-llm-cancel-request~
 
 ** Customization
 :PROPERTIES:
@@ -199,18 +223,44 @@ You can customize various aspects of ~forge-llm~ through the following variables
 :ID:       f0cb4a2b-d919-4fe0-b286-317b93084174
 :END:
 
-- ~forge-llm-pr-description-prompt~ - Prompt used to generate a PR description with the LLM
+- ~forge-llm-pr-description-prompt~ - Prompt used to generate a PR description with the LLM. This prompt is formatted with the PR template and git diff.
 
-** TO-DO:
+  You can customize this prompt to match your project's PR description style:
+
+  #+begin_src emacs-lisp
+  (setq forge-llm-pr-description-prompt
+        "Generate a PR description for the following changes.
+  PR template:
+  %s
+
+  Git diff:
+  ```
+  %s
+  ```
+
+  Please generate a PR description that follows our team's style.")
+  #+end_src
+
+** Integration with Doom Emacs
 :PROPERTIES:
-:ID:       3a132956-2422-409f-8aad-dc06bb80c9bc
+:ID:       6c2a34d5-8e1a-4f7e-9c2b-1d9e7b8f3a1d
 :END:
-- Add example gif or video in the description
-- Add Doom emacs keybindings
-- Add a logo for the project
-- Change script to a literate config, for readability
-- Maybe a small one-page website?
-- Maybe more?
+
+Add the following to your ~packages.el~:
+
+#+begin_src emacs-lisp
+(package! forge-llm)
+#+end_src
+
+And in your ~config.el~:
+
+#+begin_src emacs-lisp
+(require 'forge-llm)
+(require 'llm-openai)
+(setq forge-llm-llm-provider (make-llm-openai :key "OPENAI_KEY"))
+#+end_src
+
+Or any other LLM available in the [[https://github.com/ahyatt/llm][llm]] package.
 
 ** Troubleshooting
 :PROPERTIES:
@@ -221,12 +271,62 @@ You can customize various aspects of ~forge-llm~ through the following variables
 - Check the ~*forge-llm-debug-prompt*~ buffer to see the exact prompt being sent to the LLM.
 - Check the ~*forge-llm-output*~ buffer to see the raw output from the LLM.
 
+*** Common Issues:
+:PROPERTIES:
+:ID:       4b2fd630-290e-4a95-8315-e8db4b6f4217
+:END:
+
+- *Error: "No LLM provider configured"*
+  - Make sure you've set ~forge-llm-llm-provider~ to a valid provider object.
+  - Ensure your API key is correct.
+
+- *Error: "Failed to generate git diff"*
+  - Ensure you're in a repository with valid head and base branches.
+  - Check if the current directory is within a git repository.
+
+- *PR Generation is too slow*
+  - Consider using a faster model (like GPT-3.5-turbo instead of GPT-4).
+  - Reduce ~forge-llm-max-tokens~ to limit the response size.
+
+- *PR template not found*
+  - Check if your PR template is in one of the paths listed in ~forge-llm-pr-template-paths~.
+  - Add your custom template path if needed.
+
 ** Contributing
 :PROPERTIES:
 :ID:       398ecc9e-30c2-4af4-afc5-c793ab3bedaa
 :END:
 
 Contributions are welcome! Please feel free to submit a Merge Request.
+
+*** Development Setup
+:PROPERTIES:
+:ID:       237ac5d2-d323-4b7d-9c51-54760a3ccc53
+:END:
+
+1. Clone the repository:
+   #+begin_src shell
+   git clone https://gitlab.com/rogs/forge-llm.git
+   cd forge-llm
+   #+end_src
+
+2. Install dependencies for development:
+   - Ensure you have forge and llm packages
+
+** Changelog
+:PROPERTIES:
+:ID:       a4c3b2d1-e9f8-4d2a-8c7b-1e9d8c7b1e9d
+:END:
+
+*** 0.1.0 (Initial Release)
+:PROPERTIES:
+:ID:       a061d47e-e8cd-42ea-8403-d7e15f8c1478
+:END:
+- Initial functionality for PR description generation
+- Template detection for GitHub and GitLab repositories
+- LLM integration via the ~llm~ package
+- Commands for generating PR descriptions
+- Customization options for templates and LLM providers
 
 ** License
 :PROPERTIES:
