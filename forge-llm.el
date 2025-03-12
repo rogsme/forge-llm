@@ -78,7 +78,9 @@
   (when (and buffer-file-name
              (string-match-p "new-pullreq" buffer-file-name))
     (local-set-key (kbd "C-c C-l") #'forge-llm-hello)
-    (local-set-key (kbd "C-c C-d") #'forge-llm-debug)))
+    (local-set-key (kbd "C-c C-d") #'forge-llm-debug)
+    (local-set-key (kbd "C-c C-g") #'forge-llm-generate-story)
+    (local-set-key (kbd "C-c C-t") #'forge-llm-insert-template-at-point)))
 
 ;;; LLM Integration
 
@@ -121,7 +123,80 @@ Otherwise, return the value directly."
     forge-llm-llm-provider))
 
 ;;;###autoload
-;;; Stream handling
+;;; PR Template Handling
+
+(defcustom forge-llm-pr-template-paths
+  '(".github/PULL_REQUEST_TEMPLATE.md"
+    ".github/pull_request_template.md"
+    "docs/pull_request_template.md"
+    ".gitlab/merge_request_templates/default.md")
+  "List of possible paths for PR/MR templates relative to repo root."
+  :type '(repeat string)
+  :group 'forge-llm)
+
+(defvar-local forge-llm--pr-template-path nil
+  "Path to the PR template for the current repository.")
+
+(defun forge-llm-find-pr-template ()
+  "Find PR template for the current repository.
+Updates `forge-llm--pr-template-path' with the found template path."
+  (interactive)
+  (let* ((default-directory (file-name-directory
+                            (directory-file-name
+                             (file-name-directory
+                              (or buffer-file-name default-directory)))))
+         (repo-root (locate-dominating-file default-directory ".git"))
+         found-template)
+    (when repo-root
+      (let ((default-directory repo-root))
+        (setq found-template
+              (cl-find-if #'file-exists-p forge-llm-pr-template-paths))))
+
+    (setq forge-llm--pr-template-path
+          (when found-template (expand-file-name found-template repo-root)))
+
+    (if found-template
+        (message "Found PR template: %s" forge-llm--pr-template-path)
+      (message "No PR template found in repository"))
+
+    forge-llm--pr-template-path))
+
+(defun forge-llm-insert-template-at-point ()
+  "Insert PR template at the current point in buffer."
+  (interactive)
+  (if (not (derived-mode-p 'forge-post-mode))
+      (message "Not in a Forge pull request buffer")
+    (let* ((default-directory (file-name-directory
+                              (directory-file-name
+                               (file-name-directory
+                                (or buffer-file-name default-directory)))))
+           (repo-root (locate-dominating-file default-directory ".git"))
+           template-path
+           template-content)
+
+      ;; Find template file
+      (when repo-root
+        (let ((default-directory repo-root))
+          (setq template-path
+                (cl-find-if #'file-exists-p forge-llm-pr-template-paths))))
+
+      ;; Read template content if found
+      (when template-path
+        (let ((full-path (expand-file-name template-path repo-root)))
+          (condition-case err
+              (progn
+                (with-temp-buffer
+                  (insert-file-contents full-path)
+                  (setq template-content (buffer-string)))
+                ;; Insert the content
+                (when (and template-content (not (string-empty-p template-content)))
+                  (insert template-content)
+                  (message "PR template inserted")))
+            (error (message "Error reading template: %s" err)))))
+
+      ;; Show message if template not found
+      (unless template-path
+        (message "No PR template found in repository")))))
 
 (defvar forge-llm--active-request nil
   "The active LLM request, if any.")
