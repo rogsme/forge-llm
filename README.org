@@ -294,6 +294,13 @@ Or any other LLM available in the [[https://github.com/ahyatt/llm][llm]] package
   - Check if your PR template is in one of the paths listed in ~forge-llm-pr-template-paths~.
   - Add your custom template path if needed.
 
+** TO-DO:
+:PROPERTIES:
+:ID:       97dad50e-0d25-42aa-9fe6-5e6402256454
+:END:
+- Add example gif or video in the description
+- Add Doom emacs keybindings
+
 ** Contributing
 :PROPERTIES:
 :ID:       398ecc9e-30c2-4af4-afc5-c793ab3bedaa
