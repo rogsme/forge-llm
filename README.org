@@ -367,21 +367,6 @@ Contributions are welcome! Please feel free to submit a Merge Request.
 2. Install dependencies for development:
    - Ensure you have forge and llm packages
 
-** Changelog
-:PROPERTIES:
-:ID:       a4c3b2d1-e9f8-4d2a-8c7b-1e9d8c7b1e9d
-:END:
-
-*** 0.1.0 (Initial Release)
-:PROPERTIES:
-:ID:       a061d47e-e8cd-42ea-8403-d7e15f8c1478
-:END:
-- Initial functionality for PR description generation
-- Template detection for GitHub and GitLab repositories
-- LLM integration via the ~llm~ package
-- Commands for generating PR descriptions
-- Customization options for templates and LLM providers
-
 ** Acknowledgments
 :PROPERTIES:
 :ID:       b5d4c3e2-f1a0-4b9c-8d7e-6f5a4b3c2d1e
