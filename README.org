@@ -197,11 +197,14 @@ machine api.openai.com login apikey password YOUR-API-KEY-HERE
 
 After setting up ~forge-llm~, the following commands will be available in Forge's pull request creation buffer:
 
-| Key binding | Command                                    | Description                                           |
-|-------------+--------------------------------------------+-------------------------------------------------------|
-| C-c C-g     | forge-llm-generate-pr-description          | Generate a PR description (output to separate buffer) |
-| C-c C-p     | forge-llm-generate-pr-description-at-point | Generate a PR description at the current point        |
-| C-c C-t     | forge-llm-insert-template-at-point         | Insert the PR template at the current point           |
+| Key binding            | Command                                    | Description                                           |
+|------------------------+--------------------------------------------+-------------------------------------------------------|
+| C-c C-g                | forge-llm-generate-pr-description          | Generate a PR description (output to separate buffer) |
+| C-c C-p                | forge-llm-generate-pr-description-at-point | Generate a PR description at the current point        |
+| C-c C-t                | forge-llm-insert-template-at-point         | Insert the PR template at the current point           |
+| SPC m g (Doom Emacs)   | forge-llm-generate-pr-description          | Generate a PR description (output to separate buffer) |
+| SPC m p (Doom Emacs)   | forge-llm-generate-pr-description-at-point | Generate a PR description at the current point        |
+| SPC m t (Doom Emacs)   | forge-llm-insert-template-at-point         | Insert the PR template at the current point           |
 
 *** Demo: Generate PR description in a new buffer
 :PROPERTIES:
