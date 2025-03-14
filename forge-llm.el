@@ -191,7 +191,23 @@ Adds key bindings for PR description generation."
              (string-match-p "new-pullreq" buffer-file-name))
     (local-set-key (kbd "C-c C-g") #'forge-llm-generate-pr-description)
     (local-set-key (kbd "C-c C-p") #'forge-llm-generate-pr-description-at-point)
-    (local-set-key (kbd "C-c C-t") #'forge-llm-insert-template-at-point)))
+    (local-set-key (kbd "C-c C-t") #'forge-llm-insert-template-at-point)
+
+    ;; Set up Doom Emacs keybindings if Doom is detected
+    (forge-llm--setup-doom-keybindings)))
+
+(defun forge-llm--setup-doom-keybindings ()
+  "Set up Doom Emacs keybindings for forge-llm.
+This adds SPC m g, SPC m p, and SPC m t bindings if Doom Emacs is detected."
+  (when (and (boundp 'doom-version)
+             (fboundp 'map!)
+             (fboundp 'doom-load-envvars-file))
+    (eval '(map! :map forge-post-mode-map
+                :after forge-llm
+                :localleader
+                :desc "Generate PR description" "g" #'forge-llm-generate-pr-description
+                :desc "Generate PR at point" "p" #'forge-llm-generate-pr-description-at-point
+                :desc "Insert PR template" "t" #'forge-llm-insert-template-at-point))))
 
 ;;; Utility Functions
 

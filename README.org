@@ -119,21 +119,13 @@ machine api.openai.com login apikey password YOUR-API-KEY-HERE
 :ID:       3e4f5a6b-7c8d-9e0f-1a2b-3c4d5e6f7a8b
 :END:
 
-You can add custom keybindings in your ~config.el~:
+The package automatically sets up Doom Emacs keybindings when Doom is detected:
 
-#+begin_src emacs-lisp
-(map! :map forge-post-mode-map
-      :after forge-llm
-      :localleader
-      :desc "Generate PR description" "g" #'forge-llm-generate-pr-description
-      :desc "Generate PR at point" "p" #'forge-llm-generate-pr-description-at-point
-      :desc "Insert PR template" "t" #'forge-llm-insert-template-at-point)
-#+end_src
-
-This adds the following keybindings in Doom's localleader style:
 - ~SPC m g~ - Generate PR description in a separate buffer
 - ~SPC m p~ - Generate PR description at point
 - ~SPC m t~ - Insert PR template at point
+
+No additional configuration is needed for these keybindings to work.
 
 *** Using MELPA (once available)
 :PROPERTIES:
@@ -343,8 +335,6 @@ You can customize various aspects of ~forge-llm~ through the following variables
 
   Please generate a PR description that follows our team's style.")
   #+end_src
-
-
 
 ** Troubleshooting
 :PROPERTIES:
