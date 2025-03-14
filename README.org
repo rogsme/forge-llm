@@ -81,39 +81,6 @@ Main features:
 
 3. Run ~doom sync~ to install the package.
 
-**** Setup with auth-source for API keys
-:PROPERTIES:
-:ID:       7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d
-:END:
-
-For better security, use Doom's built-in auth-source support:
-
-1. In ~packages.el~:
-#+begin_src emacs-lisp
-(package! forge-llm
-  :recipe (:host gitlab :repo "rogs/forge-llm"))
-(package! llm)
-#+end_src
-
-2. In ~config.el~:
-#+begin_src emacs-lisp
-(require 'forge-llm)
-(forge-llm-setup)
-(require 'llm-openai)  ; Or your preferred LLM provider
-(setq forge-llm-llm-provider
-      (make-llm-openai
-       :key (auth-source-pick-first-password
-             :host "api.openai.com"
-             :user "apikey")))
-#+end_src
-
-3. Store your API key in ~.authinfo~ or ~.authinfo.gpg~:
-#+begin_src
-machine api.openai.com login apikey password YOUR-API-KEY-HERE
-#+end_src
-
-4. Run ~doom sync~ to install the package.
-
 **** Keybindings
 :PROPERTIES:
 :ID:       3e4f5a6b-7c8d-9e0f-1a2b-3c4d5e6f7a8b
