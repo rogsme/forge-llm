@@ -382,6 +382,15 @@ Contributions are welcome! Please feel free to submit a Merge Request.
 - Commands for generating PR descriptions
 - Customization options for templates and LLM providers
 
+** Acknowledgments
+:PROPERTIES:
+:ID:       b5d4c3e2-f1a0-4b9c-8d7e-6f5a4b3c2d1e
+:END:
+
+This project was heavily inspired by [[https://github.com/douo/magit-gptcommit][magit-gptcommit]]. Check it out! This package works very well with forge-llm.
+
+Another huge inspiration was [[https://github.com/xenodium][xenodium]], with their Emacs package [[https://github.com/xenodium/chatgpt-shell][chatgpt-shell]].
+
 ** License
 :PROPERTIES:
 :ID:       14189649-a22f-4cf8-9850-9a8bb62456d3
