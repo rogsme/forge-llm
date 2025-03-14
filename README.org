@@ -210,7 +210,9 @@ After setting up ~forge-llm~, the following commands will be available in Forge'
 
 Pressing ~C-c C-g~ will generate a PR description and display it in a separate buffer:
 
-[[https://gitlab.com/-/project/67959042/uploads/3eed67e0b188d040906d30b6b6cc3ec6/generate-pr-desc.gif]]
+[[https://gitlab.com/-/project/67959042/uploads/3eed67e0b188d040906d30b6b6cc3ec6/generate-pr-desc.gif][file:https://gitlab.com/-/project/67959042/uploads/3eed67e0b188d040906d30b6b6cc3ec6/generate-pr-desc.gif]]
+
+/Click the image to view in full screen/
 
 *** Demo: Generate PR description at point
 :PROPERTIES:
@@ -219,7 +221,9 @@ Pressing ~C-c C-g~ will generate a PR description and display it in a separate b
 
 Pressing ~C-c C-p~ will generate a PR description and insert it directly at the cursor position:
 
-[[https://gitlab.com/-/project/67959042/uploads/9e5d4f8b4eab87989eafca9f58baa467/generate-pr-at-point.gif]]
+[[https://gitlab.com/-/project/67959042/uploads/9e5d4f8b4eab87989eafca9f58baa467/generate-pr-at-point.gif][file:https://gitlab.com/-/project/67959042/uploads/9e5d4f8b4eab87989eafca9f58baa467/generate-pr-at-point.gif]]
+
+/Click the image to view in full screen/
 
 *** Workflow:
 :PROPERTIES:
