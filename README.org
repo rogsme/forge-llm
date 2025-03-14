@@ -52,6 +52,89 @@ Main features:
   (forge-llm-setup))
 #+end_src
 
+*** Using Doom Emacs
+:PROPERTIES:
+:ID:       6c2a34d5-8e1a-4f7e-9c2b-1d9e7b8f3a1d
+:END:
+
+**** Basic Setup
+:PROPERTIES:
+:ID:       f7a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c
+:END:
+
+1. Add the following to your ~packages.el~:
+
+#+begin_src emacs-lisp
+(package! forge-llm
+  :recipe (:host gitlab :repo "rogs/forge-llm"))
+(package! llm)  ; Dependency
+#+end_src
+
+2. Add somewhere in your ~config.el~:
+
+#+begin_src emacs-lisp
+(require 'forge-llm)
+(forge-llm-setup)
+(require 'llm-openai)  ; Or your preferred LLM provider
+(setq forge-llm-llm-provider (make-llm-openai :key "YOUR-OPENAI-KEY"))
+#+end_src
+
+3. Run ~doom sync~ to install the package.
+
+**** Setup with auth-source for API keys
+:PROPERTIES:
+:ID:       7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d
+:END:
+
+For better security, use Doom's built-in auth-source support:
+
+1. In ~packages.el~:
+#+begin_src emacs-lisp
+(package! forge-llm
+  :recipe (:host gitlab :repo "rogs/forge-llm"))
+(package! llm)
+#+end_src
+
+2. In ~config.el~:
+#+begin_src emacs-lisp
+(require 'forge-llm)
+(forge-llm-setup)
+(require 'llm-openai)  ; Or your preferred LLM provider
+(setq forge-llm-llm-provider
+      (make-llm-openai
+       :key (auth-source-pick-first-password
+             :host "api.openai.com"
+             :user "apikey")))
+#+end_src
+
+3. Store your API key in ~.authinfo~ or ~.authinfo.gpg~:
+#+begin_src
+machine api.openai.com login apikey password YOUR-API-KEY-HERE
+#+end_src
+
+4. Run ~doom sync~ to install the package.
+
+**** Keybindings
+:PROPERTIES:
+:ID:       3e4f5a6b-7c8d-9e0f-1a2b-3c4d5e6f7a8b
+:END:
+
+You can add custom keybindings in your ~config.el~:
+
+#+begin_src emacs-lisp
+(map! :map forge-post-mode-map
+      :after forge-llm
+      :localleader
+      :desc "Generate PR description" "g" #'forge-llm-generate-pr-description
+      :desc "Generate PR at point" "p" #'forge-llm-generate-pr-description-at-point
+      :desc "Insert PR template" "t" #'forge-llm-insert-template-at-point)
+#+end_src
+
+This adds the following keybindings in Doom's localleader style:
+- ~SPC m g~ - Generate PR description in a separate buffer
+- ~SPC m p~ - Generate PR description at point
+- ~SPC m t~ - Insert PR template at point
+
 *** Using MELPA (once available)
 :PROPERTIES:
 :ID:       0e561e53-10f6-4a0b-90e3-46094124aeb2
@@ -161,6 +244,24 @@ After setting up ~forge-llm~, the following commands will be available in Forge'
 | C-c C-p     | forge-llm-generate-pr-description-at-point | Generate a PR description at the current point        |
 | C-c C-t     | forge-llm-insert-template-at-point         | Insert the PR template at the current point           |
 
+*** Demo: Generate PR description in a new buffer
+:PROPERTIES:
+:ID:       8d7e1f6a-3b2c-4a9e-8d7e-1f6a3b2c4a9e
+:END:
+
+Pressing ~C-c C-g~ will generate a PR description and display it in a separate buffer:
+
+[[https://gitlab.com/-/project/67959042/uploads/3eed67e0b188d040906d30b6b6cc3ec6/generate-pr-desc.gif]]
+
+*** Demo: Generate PR description at point
+:PROPERTIES:
+:ID:       9e5d4f8b-4eab-8798-9e5d-4f8b4eab8798
+:END:
+
+Pressing ~C-c C-p~ will generate a PR description and insert it directly at the cursor position:
+
+[[https://gitlab.com/-/project/67959042/uploads/9e5d4f8b4eab87989eafca9f58baa467/generate-pr-at-point.gif]]
+
 *** Workflow:
 :PROPERTIES:
 :ID:       d745d788-793a-4847-95d7-4f5105bc654d
@@ -243,26 +344,7 @@ You can customize various aspects of ~forge-llm~ through the following variables
   Please generate a PR description that follows our team's style.")
   #+end_src
 
-** Integration with Doom Emacs
-:PROPERTIES:
-:ID:       6c2a34d5-8e1a-4f7e-9c2b-1d9e7b8f3a1d
-:END:
 
-Add the following to your ~packages.el~:
-
-#+begin_src emacs-lisp
-(package! forge-llm)
-#+end_src
-
-And in your ~config.el~:
-
-#+begin_src emacs-lisp
-(require 'forge-llm)
-(require 'llm-openai)
-(setq forge-llm-llm-provider (make-llm-openai :key "OPENAI_KEY"))
-#+end_src
-
-Or any other LLM available in the [[https://github.com/ahyatt/llm][llm]] package.
 
 ** Troubleshooting
 :PROPERTIES:
@@ -298,8 +380,7 @@ Or any other LLM available in the [[https://github.com/ahyatt/llm][llm]] package
 :PROPERTIES:
 :ID:       97dad50e-0d25-42aa-9fe6-5e6402256454
 :END:
-- Add example gif or video in the description
-- Add Doom emacs keybindings
+- Add more examples and use cases
 
 ** Contributing
 :PROPERTIES:
