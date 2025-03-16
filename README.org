@@ -199,9 +199,9 @@ After setting up ~forge-llm~, the following commands will be available in Forge'
 
 | Key binding            | Command                                    | Description                                           |
 |------------------------+--------------------------------------------+-------------------------------------------------------|
-| C-c C-g                | forge-llm-generate-pr-description          | Generate a PR description (output to separate buffer) |
-| C-c C-p                | forge-llm-generate-pr-description-at-point | Generate a PR description at the current point        |
-| C-c C-t                | forge-llm-insert-template-at-point         | Insert the PR template at the current point           |
+| C-c C-l g              | forge-llm-generate-pr-description          | Generate a PR description (output to separate buffer) |
+| C-c C-l p              | forge-llm-generate-pr-description-at-point | Generate a PR description at the current point        |
+| C-c C-l t              | forge-llm-insert-template-at-point         | Insert the PR template at the current point           |
 | SPC m g (Doom Emacs)   | forge-llm-generate-pr-description          | Generate a PR description (output to separate buffer) |
 | SPC m p (Doom Emacs)   | forge-llm-generate-pr-description-at-point | Generate a PR description at the current point        |
 | SPC m t (Doom Emacs)   | forge-llm-insert-template-at-point         | Insert the PR template at the current point           |
@@ -211,7 +211,7 @@ After setting up ~forge-llm~, the following commands will be available in Forge'
 :ID:       8d7e1f6a-3b2c-4a9e-8d7e-1f6a3b2c4a9e
 :END:
 
-Pressing ~C-c C-g~ will generate a PR description and display it in a separate buffer:
+Pressing ~C-c C-l g~ will generate a PR description and display it in a separate buffer:
 
 [[https://gitlab.com/-/project/67959042/uploads/3eed67e0b188d040906d30b6b6cc3ec6/generate-pr-desc.gif][file:https://gitlab.com/-/project/67959042/uploads/3eed67e0b188d040906d30b6b6cc3ec6/generate-pr-desc.gif]]
 
@@ -222,7 +222,7 @@ Pressing ~C-c C-g~ will generate a PR description and display it in a separate b
 :ID:       9e5d4f8b-4eab-8798-9e5d-4f8b4eab8798
 :END:
 
-Pressing ~C-c C-p~ will generate a PR description and insert it directly at the cursor position:
+Pressing ~C-c C-l p~ will generate a PR description and insert it directly at the cursor position:
 
 [[https://gitlab.com/-/project/67959042/uploads/9e5d4f8b4eab87989eafca9f58baa467/generate-pr-at-point.gif][file:https://gitlab.com/-/project/67959042/uploads/9e5d4f8b4eab87989eafca9f58baa467/generate-pr-at-point.gif]]
 
@@ -234,7 +234,7 @@ Pressing ~C-c C-p~ will generate a PR description and insert it directly at the 
 :END:
 1. Create a PR using Forge as normal (~forge-create-pullreq~)
 2. In the PR creation buffer, position your cursor where you want to insert the PR description
-3. Press ~C-c C-p~ to generate and insert a PR description based on your changes
+3. Press ~C-c C-l p~ to generate and insert a PR description based on your changes
 4. Edit the description as needed and submit the PR
 
 *** Canceling Generation:
