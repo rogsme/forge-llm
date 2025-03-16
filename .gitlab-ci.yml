@@ -1,0 +1,70 @@
+image: silex/emacs:27.1
+
+stages:
+  - lint
+  - test
+
+variables:
+  TERM: "dumb"
+  # Skip interactive prompts
+  DEBIAN_FRONTEND: "noninteractive"
+
+# Cache packages between jobs and pipelines
+cache:
+  paths:
+    - .emacs.d/.cache
+    - .emacs.d/elpa
+
+before_script:
+  - mkdir -p .emacs.d/elpa
+  - echo "🔧 Setting up Emacs package environment..."
+
+lint:
+  stage: lint
+  script:
+    - echo "🔍 Checking Emacs Lisp syntax..."
+    - emacs --batch -Q --eval "(batch-byte-compile)" forge-llm.el
+
+test:
+  stage: test
+  script:
+    # Install dependencies
+    - echo "🚀 Installing dependencies (forge & llm)..."
+    - emacs --batch -Q
+      --eval "(require 'package)"
+      --eval "(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\"))"
+      --eval "(package-initialize)"
+      --eval "(package-refresh-contents)"
+      --eval "(package-install 'forge)"
+      --eval "(package-install 'llm)"
+
+    # Verify dependency installation
+    - echo "🔍 Verifying dependency installation..."
+    - emacs --batch -Q
+      --eval "(require 'package)"
+      --eval "(package-initialize)"
+      --eval "(when (not (package-installed-p 'forge)) (error \"Forge installation failed\"))"
+      --eval "(when (not (package-installed-p 'llm)) (error \"LLM installation failed\"))"
+
+    # Byte-compile the package and check for warnings/errors
+    - echo "🛠️ Testing package compilation..."
+    - emacs --batch -Q
+      --eval "(require 'package)"
+      --eval "(package-initialize)"
+      --eval "(setq byte-compile-error-on-warn t)"
+      -f batch-byte-compile forge-llm.el
+
+    # Load the package to ensure it's working
+    - echo "✅ Verifying package loads correctly..."
+    - emacs --batch -Q
+      --eval "(require 'package)"
+      --eval "(package-initialize)"
+      --eval "(load-file \"forge-llm.elc\")"
+      --eval "(require 'forge-llm)"
+
+    - echo "🎉 All tests passed!"
+
+  artifacts:
+    paths:
+      - forge-llm.elc
+    expire_in: 1 week
