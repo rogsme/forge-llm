@@ -42,9 +42,9 @@
 ;; 2. Call `forge-llm-setup` to integrate with Forge's PR creation buffers.
 ;;
 ;; 3. When creating a PR using Forge (e.g., via `forge-create-pullreq`), you can:
-;;    - Use C-c C-l g to generate a PR description in a separate buffer
-;;    - Use C-c C-l p to generate and insert a PR description at point
-;;    - Use C-c C-l t to insert the PR template at point
+;;    - Use C-c C-g to generate a PR description in a separate buffer
+;;    - Use C-c C-p to generate and insert a PR description at point
+;;    - Use C-c C-t to insert the PR template at point
 ;;
 ;; Example configuration:
 ;;
@@ -189,9 +189,9 @@ Adds key bindings for PR description generation."
   ;; Only add our keybinding if this is a pull request post
   (when (and buffer-file-name
              (string-match-p "new-pullreq" buffer-file-name))
-    (local-set-key (kbd "C-c C-l g") #'forge-llm-generate-pr-description)
-    (local-set-key (kbd "C-c C-l p") #'forge-llm-generate-pr-description-at-point)
-    (local-set-key (kbd "C-c C-l t") #'forge-llm-insert-template-at-point)
+    (local-set-key (kbd "C-c C-g") #'forge-llm-generate-pr-description)
+    (local-set-key (kbd "C-c C-p") #'forge-llm-generate-pr-description-at-point)
+    (local-set-key (kbd "C-c C-t") #'forge-llm-insert-template-at-point)
 
     ;; Set up Doom Emacs keybindings if Doom is detected
     (forge-llm--setup-doom-keybindings)))
