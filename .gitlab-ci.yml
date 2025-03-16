@@ -1,4 +1,4 @@
-image: silex/emacs:27.1
+image: silex/emacs:29.1
 
 stages:
   - test
