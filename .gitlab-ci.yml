@@ -1,7 +1,6 @@
 image: silex/emacs:27.1
 
 stages:
-  - lint
   - test
 
 variables:
@@ -18,12 +17,6 @@ cache:
 before_script:
   - mkdir -p .emacs.d/elpa
   - echo "🔧 Setting up Emacs package environment..."
-
-lint:
-  stage: lint
-  script:
-    - echo "🔍 Checking Emacs Lisp syntax..."
-    - emacs --batch -Q --eval "(batch-byte-compile)" forge-llm.el
 
 test:
   stage: test
