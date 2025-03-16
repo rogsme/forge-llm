@@ -23,10 +23,6 @@ before_script:
   - mkdir -p .emacs.d/elpa
   - echo "🔧 Setting up Emacs package environment..."
 
-before_script:
-  - mkdir -p .emacs.d/elpa
-  - echo "🔧 Setting up Emacs package environment..."
-
 test:
   stage: test
   script:
