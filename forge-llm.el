@@ -336,7 +336,7 @@ BUFFER is the target buffer."
 
 (defun forge-llm--stream-update-status (status buffer &optional error-msg)
   "Update status of the streaming response.
-STATUS is one of 'success', 'error'.
+STATUS is one of `success`, `error`.
 BUFFER is the target buffer.
 ERROR-MSG is the error message, if any."
   (when (buffer-live-p buffer)
