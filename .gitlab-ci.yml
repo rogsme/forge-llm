@@ -1,7 +1,8 @@
 image: silex/emacs:29.1
 
 stages:
-  - test
+  - compile
+  - lint
 
 variables:
   TERM: "dumb"
@@ -23,8 +24,8 @@ before_script:
   - mkdir -p .emacs.d/elpa
   - echo "🔧 Setting up Emacs package environment..."
 
-test:
-  stage: test
+compile:
+  stage: compile
   script:
     # Install dependencies
     - echo "🚀 Installing dependencies (forge & llm)..."
@@ -66,3 +67,36 @@ test:
     paths:
       - forge-llm.elc
     expire_in: 1 week
+
+lint:
+  stage: lint
+  script:
+    # Install package-lint and dependencies
+    - echo "🔍 Installing package-lint..."
+    - emacs --batch -Q
+      --eval "(require 'package)"
+      --eval "(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\"))"
+      --eval "(package-initialize)"
+      --eval "(package-refresh-contents)"
+      --eval "(package-install 'package-lint)"
+      --eval "(package-install 'forge)"
+      --eval "(package-install 'llm)"
+
+    # Run package-lint on forge-llm.el
+    - echo "🔍 Linting package with package-lint..."
+    - emacs --batch -Q
+      --eval "(require 'package)"
+      --eval "(package-initialize)"
+      --eval "(require 'package-lint)"
+      --eval "(setq package-lint-main-file \"forge-llm.el\")"
+      --eval "(with-current-buffer (find-file-noselect \"forge-llm.el\")
+                (let ((package-lint-results (package-lint-buffer)))
+                  (if package-lint-results
+                      (progn
+                        (message \"Package lint errors found:\")
+                        (dolist (err package-lint-results)
+                          (message \"%s\" err))
+                        (error \"Package lint failed\"))
+                    (message \"No package lint errors found\"))))"
+
+    - echo "✅ Package linting passed!"
