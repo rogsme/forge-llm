@@ -287,6 +287,14 @@ You can customize various aspects of ~forge-llm~ through the following variables
   (setq forge-llm-max-tokens 1024)
   #+end_src
 
+- ~forge-llm-max-diff-size~ - Maximum size in characters for git diffs sent to the LLM (nil for no truncation)
+  #+begin_src emacs-lisp
+  ;; Default is 50000, set to nil to disable truncation
+  (setq forge-llm-max-diff-size 100000)  ; Increase to 100K characters
+  ;; Or disable truncation completely
+  (setq forge-llm-max-diff-size nil)
+  #+end_src
+
 *** Prompt Configuration
 :PROPERTIES:
 :ID:       f0cb4a2b-d919-4fe0-b286-317b93084174

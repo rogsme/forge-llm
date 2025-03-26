@@ -255,17 +255,78 @@ Returns the diff as a string, or nil if the diff cannot be generated."
          (message "Error generating git diff: %s" err)
          (setq diff-output nil)))
 
-      ;; If diff is too large and truncation is enabled, trim it
+      ;; If diff is too large and truncation is enabled, perform smart trimming
       (when (and diff-output
                  forge-llm-max-diff-size
                  (> (length diff-output) forge-llm-max-diff-size))
-        (setq diff-output
-              (concat (substring diff-output 0 forge-llm-max-diff-size)
-                      "\n\n... [diff truncated due to size] ...\n"
-                      (format "Set `forge-llm-max-diff-size` higher than %d if you need the full diff."
-                              forge-llm-max-diff-size)))
-        (message "Git diff truncated to %d characters. Full diff is %d characters."
-                 forge-llm-max-diff-size (length diff-output)))
+        ;; Calculate total diff size before truncation for reporting
+        (let ((orig-size (length diff-output))
+              (file-headers nil)
+              (truncation-message (format "\n\n... [diff truncated from %d to ~%d characters] ...\n%s\n"
+                                         (length diff-output)
+                                         forge-llm-max-diff-size
+                                         "Set `forge-llm-max-diff-size` higher or to nil if you need the full diff.")))
+
+          ;; Extract file headers to preserve context about which files changed
+          (with-temp-buffer
+            (insert diff-output)
+            (goto-char (point-min))
+            (while (re-search-forward "^diff --git .*$" nil t)
+              (push (match-string 0) file-headers))
+            (setq file-headers (nreverse file-headers)))
+
+          ;; Perform the actual truncation
+          (if (> (length file-headers) 1)
+              ;; Smart truncation: Include headers + beginning of each file's diff
+              (let* ((per-file-budget (/ (- forge-llm-max-diff-size
+                                            (length truncation-message)
+                                            (* (length file-headers) 20))
+                                         (length file-headers)))
+                     (truncated-parts nil))
+
+                ;; Split the diff by file and take a portion of each
+                (with-temp-buffer
+                  (insert diff-output)
+                  (goto-char (point-min))
+                  (let ((start-pos (point-min)))
+                    (while (re-search-forward "^diff --git " nil t)
+                      (unless (= start-pos (match-beginning 0))
+                        (push (buffer-substring start-pos (match-beginning 0)) truncated-parts))
+                      (setq start-pos (match-beginning 0)))
+                    ;; Add the last part
+                    (push (buffer-substring start-pos (point-max)) truncated-parts))
+
+                  ;; Reverse because we pushed in reverse order
+                  (setq truncated-parts (nreverse truncated-parts)))
+
+                ;; Create the final diff with a summary of all changed files
+                ;; but with truncated content for each file
+                (setq diff-output
+                      (concat
+                       ;; First add a summary of all changed files
+                       "Summary of files changed:\n"
+                       (mapconcat #'identity file-headers "\n")
+                       "\n\n"
+                       ;; Then add truncated diffs for each file
+                       (mapconcat
+                        (lambda (part)
+                          (if (> (length part) per-file-budget)
+                              (concat (substring part 0 per-file-budget)
+                                      "\n... [file diff truncated] ...\n")
+                            part))
+                        truncated-parts
+                        "\n")
+                       ;; Add truncation message
+                       truncation-message)))
+
+            ;; Simple truncation for single file diffs
+            (setq diff-output
+                  (concat (substring diff-output 0 forge-llm-max-diff-size)
+                          truncation-message)))
+
+          ;; Report truncation to the user
+          (message "Git diff truncated from %d to ~%d characters"
+                   orig-size (length diff-output))))
 
       diff-output)))
 
