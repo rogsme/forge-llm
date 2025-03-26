@@ -155,6 +155,16 @@ This template will be used if no PR template is found in the repository."
   :type 'string
   :group 'forge-llm)
 
+(defcustom forge-llm-max-diff-size 50000
+  "Maximum size in characters for git diffs sent to the LLM.
+If a diff exceeds this size, it will be truncated to avoid hitting
+LLM token limits. Setting a higher value will provide more context
+to the LLM but may increase token usage and costs. Set to nil to
+disable truncation entirely."
+  :type '(choice (const :tag "No truncation" nil)
+                (integer :tag "Maximum characters"))
+  :group 'forge-llm)
+
 ;;; Variables
 
 (defvar-local forge-llm--pr-template-path nil
@@ -230,7 +240,7 @@ Returns a cons cell (head . base) or nil if information is not available."
 
 (defun forge-llm--get-git-diff (repo-root head base)
   "Get the git diff between HEAD and BASE branches.
-Truncate the diff if it's too large.
+Truncate the diff if it exceeds `forge-llm-max-diff-size`.
 REPO-ROOT is the repository root directory.
 
 Returns the diff as a string, or nil if the diff cannot be generated."
@@ -245,10 +255,17 @@ Returns the diff as a string, or nil if the diff cannot be generated."
          (message "Error generating git diff: %s" err)
          (setq diff-output nil)))
 
-      ;; If diff is too large, trim it
-      (when (and diff-output (> (length diff-output) 12000))
-        (setq diff-output (substring diff-output 0 12000))
-        (setq diff-output (concat diff-output "\n\n... [diff truncated due to size] ...")))
+      ;; If diff is too large and truncation is enabled, trim it
+      (when (and diff-output
+                 forge-llm-max-diff-size
+                 (> (length diff-output) forge-llm-max-diff-size))
+        (setq diff-output
+              (concat (substring diff-output 0 forge-llm-max-diff-size)
+                      "\n\n... [diff truncated due to size] ...\n"
+                      (format "Set `forge-llm-max-diff-size` higher than %d if you need the full diff."
+                              forge-llm-max-diff-size)))
+        (message "Git diff truncated to %d characters. Full diff is %d characters."
+                 forge-llm-max-diff-size (length diff-output)))
 
       diff-output)))
 
