@@ -106,15 +106,15 @@ Increase this value if you need longer PR descriptions."
   :group 'forge-llm)
 
 (defcustom forge-llm-pr-description-prompt
-  "Please help write a professional Pull Request description based on the following information.
+  "You are an expert developer writing a professional Pull Request description. Use the information below to generate a complete, ready-to-submit PR description.
 
 INSTRUCTIONS:
-1. Follow the PR template structure exactly - do not modify, add or remove sections
-2. Fill each section with relevant content based on the git diff
-3. Mark sections as 'N/A' if they don't apply to this specific PR
-4. Focus on the logic and functionality changes, not on test implementation details
-5. Be clear and concise, but provide enough detail for reviewers to understand the changes
-6. Use bullet points for lists of changes where appropriate
+1. Use the PR template exactly as provided — do not remove, rename, reorder, or reformat any section headers.
+2. Replace the content inside each section with relevant answers based on the context and git diff.
+3. If a section doesn’t apply, write 'N/A' under that section.
+4. Do not leave any section blank — every section must be filled or marked as 'N/A'.
+5. Focus on logic and functionality changes, not test or formatting details.
+6. Use bullet points for lists when appropriate.
 
 %s
 
@@ -123,7 +123,7 @@ Git diff:
 %s
 ```
 
-Please generate the complete PR description, ready to submit."
+Now fill out the PR description by replacing each section’s content with an appropriate answer, while keeping all section headers and formatting unchanged."
   "Prompt used to generate a PR description with the LLM.
 This will be formatted with the PR template (or default template) and git diff.
 You can customize this prompt to better suit your project's requirements."
