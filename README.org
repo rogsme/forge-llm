@@ -84,9 +84,7 @@ If you use ~straight.el~ to manage your packages, it can install ~forge-llm~ dir
 1. Add the following to your ~packages.el~ (ensure MELPA is enabled in your Doom configuration, which is usually the default):
 
 #+begin_src emacs-lisp
-(package! forge-llm
-  ;; This will install from MELPA
-  )
+(package! forge-llm)
 (package! llm)  ; Dependency
 #+end_src
 
