@@ -39,14 +39,33 @@ Main features:
 :ID:       a4cfca4c-6029-445a-9e1d-88293ddaaff7
 :END:
 
+*** Using MELPA (Recommended)
+:PROPERTIES:
+:ID:       0e561e53-10f6-4a0b-90e3-46094124aeb2
+:END:
+
+The easiest way to install ~forge-llm~ is via MELPA. Ensure you have MELPA configured in your Emacs setup (it's included by default in many distributions like Doom Emacs and Spacemacs).
+
+#+begin_src emacs-lisp
+(use-package forge-llm
+  :ensure t
+  :after forge
+  :config
+  (forge-llm-setup))
+#+end_src
+
 *** Using straight.el with use-package
 :PROPERTIES:
 :ID:       0c4a74cd-f752-4b3f-a729-0cc5a34f3d38
 :END:
 
+If you use ~straight.el~ to manage your packages, it can install ~forge-llm~ directly from MELPA. Ensure MELPA is included in your ~straight-recipe-repositories~ or ~straight-recipe-sources~.
+
 #+begin_src emacs-lisp
 (use-package forge-llm
-  :straight (:host gitlab :repo "rogs/forge-llm")
+  ;; straight.el will fetch this from MELPA if :ensure t is used
+  ;; and straight.el is configured as the handler for use-package.
+  :ensure t
   :after forge
   :config
   (forge-llm-setup))
@@ -62,21 +81,27 @@ Main features:
 :ID:       f7a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c
 :END:
 
-1. Add the following to your ~packages.el~:
+1. Add the following to your ~packages.el~ (ensure MELPA is enabled in your Doom configuration, which is usually the default):
 
 #+begin_src emacs-lisp
 (package! forge-llm
-  :recipe (:host gitlab :repo "rogs/forge-llm"))
+  ;; This will install from MELPA
+  )
 (package! llm)  ; Dependency
 #+end_src
 
 2. Add somewhere in your ~config.el~:
 
 #+begin_src emacs-lisp
-(require 'forge-llm)
-(forge-llm-setup)
+;; Load and setup forge-llm after forge is loaded
+(after! forge
+  (require 'forge-llm)
+  (forge-llm-setup))
+
+;; Configure your LLM provider (example using OpenAI)
+;; Place this somewhere appropriate in your config.el
 (require 'llm-openai)  ; Or your preferred LLM provider
-(setq forge-llm-llm-provider (make-llm-openai :key "YOUR-OPENAI-KEY"))
+(setq forge-llm-llm-provider (make-llm-openai :key "YOUR-OPENAI-KEY")) ; Replace with your key/provider setup
 #+end_src
 
 3. Run ~doom sync~ to install the package.
@@ -93,19 +118,6 @@ The package automatically sets up Doom Emacs keybindings when Doom is detected:
 - ~SPC m t~ - Insert PR template at point
 
 No additional configuration is needed for these keybindings to work.
-
-*** Using MELPA (once available)
-:PROPERTIES:
-:ID:       0e561e53-10f6-4a0b-90e3-46094124aeb2
-:END:
-
-#+begin_src emacs-lisp
-(use-package forge-llm
-  :ensure t
-  :after forge
-  :config
-  (forge-llm-setup))
-#+end_src
 
 *** Manual installation
 :PROPERTIES:
@@ -132,6 +144,20 @@ Add to your Emacs configuration:
 :END:
 
 ~forge-llm~ depends on the [[https://github.com/ahyatt/llm][llm]] package for LLM integration. You'll need to set up at least one LLM provider. Please refer to the [[https://github.com/ahyatt/llm?tab=readme-ov-file#setting-up-providers][llm documentation]] for detailed instructions.
+
+Some of the providers supported by the ~llm~ package include:
+- OpenAI
+- Anthropic (Claude)
+- Google (Gemini, Vertex AI)
+- Azure OpenAI
+- GitHub Models
+- Ollama (for local models like Llama, Mistral, etc.)
+- GPT4All (for local models)
+- llama.cpp (via OpenAI compatible endpoint)
+- Deepseek
+- Generic OpenAI-compatible endpoints
+
+See the [[https://github.com/ahyatt/llm?tab=readme-ov-file#setting-up-providers][llm documentation]] for the complete list and specific setup steps.
 
 *** Example: OpenAI provider
 :PROPERTIES:
@@ -273,6 +299,7 @@ You can customize various aspects of ~forge-llm~ through the following variables
 :END:
 
 - ~forge-llm-llm-provider~ - LLM provider to use. Can be a provider object or a function that returns a provider object
+  (See the [[https://github.com/ahyatt/llm][llm package]] documentation for how to create provider objects).
   #+begin_src emacs-lisp
   (setq forge-llm-llm-provider (make-llm-openai :key "YOUR-API-KEY"))
   #+end_src
