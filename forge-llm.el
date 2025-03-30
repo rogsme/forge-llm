@@ -143,13 +143,7 @@ You can customize this prompt to better suit your project's requirements."
 - [ ] Refactoring (no functional changes)
 
 ## How Has This Been Tested?
-<!-- Describe how you tested your changes -->
-
-## Checklist
-- [ ] My code follows the project's style guidelines
-- [ ] I have performed a self-review of my code
-- [ ] I have added tests that prove my fix is effective or my feature works
-- [ ] New and existing tests pass with my changes"
+<!-- Describe how you tested your changes -->"
   "Default PR template to use when no template is found in the repository.
 This template will be used if no PR template is found in the repository."
   :type 'string
