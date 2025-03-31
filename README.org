@@ -2,13 +2,13 @@
 #+AUTHOR: Roger Gonzalez
 #+EMAIL: roger@rogs.me
 
+[[https://melpa.org/#/forge-llm][file:https://melpa.org/packages/forge-llm-badge.svg]]
+[[https://gitlab.com/rogs/forge-llm/badges/master/pipeline.svg]]
+
 * forge-llm
 :PROPERTIES:
 :ID:       81db1fd1-a5db-4201-9113-72889f7c7829
 :END:
-
-[[https://melpa.org/#/forge-llm][file:https://melpa.org/packages/forge-llm-badge.svg]]
-[[https://gitlab.com/rogs/forge-llm/badges/master/pipeline.svg]]
 
 Generate Pull Request descriptions for Forge using LLM providers through the [[https://github.com/ahyatt/llm][llm]] package.
 
