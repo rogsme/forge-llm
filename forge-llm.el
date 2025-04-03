@@ -28,6 +28,10 @@
 ;; high-quality Pull Request descriptions automatically using an LLM (Language
 ;; Learning Model) like OpenAI's GPT models or other compatible providers.
 ;;
+;; **Important:** This package requires the `forge` package to be installed and
+;; configured. Its primary functionality is designed to work within Forge's
+;; pull request creation buffer (`forge-post-mode`).
+;;
 ;; Features:
 ;; - Automatically detect and use repository PR templates
 ;; - Generate PR descriptions based on git diffs between branches

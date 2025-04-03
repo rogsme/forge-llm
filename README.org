@@ -33,7 +33,7 @@ Main features:
 :ID:       f30fedc1-a24a-4308-bc78-6f9c01857c18
 :END:
 
-- [[https://magit.vc/][Magit]] and [[https://github.com/magit/forge][Forge]]
+- [[https://magit.vc/][Magit]] and [[https://github.com/magit/forge][Forge]] (**Note:** `forge` is essential for this package to operate)
 - [[https://github.com/ahyatt/llm][llm]]
 - Emacs 25.1+
 
@@ -222,7 +222,7 @@ machine api.openai.com login apikey password YOUR-API-KEY-HERE
 :ID:       e6753914-01ee-41e9-bcdf-f3d6e75ee451
 :END:
 
-After setting up ~forge-llm~, the following commands will be available in Forge's pull request creation buffer:
+After setting up ~forge-llm~, the following commands will be available *specifically within Forge's pull request creation buffer* (which runs in `forge-post-mode`):
 
 | Key binding            | Command                                    | Description                                           |
 |------------------------+--------------------------------------------+-------------------------------------------------------|
