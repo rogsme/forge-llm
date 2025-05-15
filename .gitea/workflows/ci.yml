@@ -18,7 +18,7 @@ jobs:
       - name: Checkout manually
         run: |
           apt-get update && apt-get install -y git
-          git clone https://gitea.example.com/your/repo.git .
+          git clone https://git.rogs.me/rogs/forge-llm.git
 
       - name: Install Git
         run: |
