@@ -9,23 +9,19 @@ jobs:
   compile:
     name: Compile Emacs Package
     runs-on: ubuntu-latest
-    container:
-      image: silex/emacs:29.1
+
     env:
       TERM: dumb
       DEBIAN_FRONTEND: noninteractive
-    steps:
-      - name: Checkout manually
-        run: |
-          apt-get update -qq && apt-get install -y -qq git
-          git --version
-          git clone https://git.rogs.me/rogs/forge-llm.git .
 
-      - name: Install Git
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Emacs and Git
         run: |
-          echo "🔧 Installing Git..."
-          apt-get update -qq && apt-get install -y -qq git
-          git --version
+          sudo apt-get update
+          sudo apt-get install -y emacs git
 
       - name: Setup Emacs environment
         run: mkdir -p .emacs.d/elpa
@@ -73,11 +69,15 @@ jobs:
   lint:
     name: Lint Emacs Package
     runs-on: ubuntu-latest
-    container:
-      image: silex/emacs:29.1
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Install Emacs
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y emacs
 
       - name: Install package-lint and dependencies
         run: |
