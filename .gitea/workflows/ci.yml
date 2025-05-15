@@ -18,10 +18,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install Emacs and Git
+      - name: Install Emacs
         run: |
           sudo apt-get update
-          sudo apt-get install -y emacs git
+          sudo apt-get install -y emacs
 
       - name: Setup Emacs environment
         run: mkdir -p .emacs.d/elpa
