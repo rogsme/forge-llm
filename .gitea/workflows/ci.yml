@@ -15,8 +15,10 @@ jobs:
       TERM: dumb
       DEBIAN_FRONTEND: noninteractive
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout manually
+        run: |
+          apt-get update && apt-get install -y git
+          git clone https://gitea.example.com/your/repo.git .
 
       - name: Install Git
         run: |
