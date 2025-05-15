@@ -3,7 +3,7 @@
 #+EMAIL: roger@rogs.me
 
 [[https://melpa.org/#/forge-llm][file:https://melpa.org/packages/forge-llm-badge.svg]]
-[[https://gitlab.com/rogs/forge-llm/badges/master/pipeline.svg]]
+[[https://git.rogs.me/rogs/forge-llm/actions/workflows/ci.yml/badge.svg]]
 
 * forge-llm
 :PROPERTIES:
