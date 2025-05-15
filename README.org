@@ -1,6 +1,7 @@
 #+TITLE: forge-llm
 #+AUTHOR: Roger Gonzalez
 #+EMAIL: roger@rogs.me
+#+OPTIONS: toc:nil
 
 [[https://melpa.org/#/forge-llm][file:https://melpa.org/packages/forge-llm-badge.svg]]
 [[https://git.rogs.me/rogs/forge-llm/actions/workflows/ci.yml/badge.svg]]
