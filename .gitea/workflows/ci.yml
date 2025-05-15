@@ -1,0 +1,105 @@
+name: Emacs Package CI
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  compile:
+    name: Compile Emacs Package
+    runs-on: ubuntu-latest
+    container:
+      image: silex/emacs:29.1
+    env:
+      TERM: dumb
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Git
+        run: |
+          echo "🔧 Installing Git..."
+          apt-get update -qq && apt-get install -y -qq git
+          git --version
+
+      - name: Setup Emacs environment
+        run: mkdir -p .emacs.d/elpa
+
+      - name: Install dependencies (forge & llm)
+        run: |
+          emacs --batch -Q \
+            --eval "(require 'package)" \
+            --eval "(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\"))" \
+            --eval "(package-initialize)" \
+            --eval "(package-refresh-contents)" \
+            --eval "(package-install 'forge)" \
+            --eval "(package-install 'llm)"
+
+      - name: Verify dependency installation
+        run: |
+          emacs --batch -Q \
+            --eval "(require 'package)" \
+            --eval "(package-initialize)" \
+            --eval "(when (not (package-installed-p 'forge)) (error \"Forge installation failed\"))" \
+            --eval "(when (not (package-installed-p 'llm)) (error \"LLM installation failed\"))"
+
+      - name: Byte-compile the package
+        run: |
+          emacs --batch -Q \
+            --eval "(require 'package)" \
+            --eval "(package-initialize)" \
+            --eval "(setq byte-compile-error-on-warn t)" \
+            -f batch-byte-compile forge-llm.el
+
+      - name: Verify package loads correctly
+        run: |
+          emacs --batch -Q \
+            --eval "(require 'package)" \
+            --eval "(package-initialize)" \
+            --eval "(load-file \"forge-llm.elc\")" \
+            --eval "(require 'forge-llm)"
+
+      - name: Upload byte-compiled file
+        uses: actions/upload-artifact@v3
+        with:
+          name: forge-llm.elc
+          path: forge-llm.elc
+
+  lint:
+    name: Lint Emacs Package
+    runs-on: ubuntu-latest
+    container:
+      image: silex/emacs:29.1
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install package-lint and dependencies
+        run: |
+          emacs --batch -Q \
+            --eval "(require 'package)" \
+            --eval "(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\"))" \
+            --eval "(package-initialize)" \
+            --eval "(package-refresh-contents)" \
+            --eval "(package-install 'package-lint)" \
+            --eval "(package-install 'forge)" \
+            --eval "(package-install 'llm)"
+
+      - name: Lint with package-lint
+        run: |
+          emacs --batch -Q \
+            --eval "(require 'package)" \
+            --eval "(package-initialize)" \
+            --eval "(require 'package-lint)" \
+            --eval "(setq package-lint-main-file \"forge-llm.el\")" \
+            --eval "(with-current-buffer (find-file-noselect \"forge-llm.el\") \
+                      (let ((package-lint-results (package-lint-buffer))) \
+                        (if package-lint-results \
+                            (progn \
+                              (message \"Package lint errors found:\") \
+                              (dolist (err package-lint-results) \
+                                (message \"%s\" err)) \
+                              (error \"Package lint failed\")) \
+                          (message \"No package lint errors found\"))))"
