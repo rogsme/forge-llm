@@ -599,14 +599,15 @@ The description is generated based on the git diff between branches."
                prompt
                ;; Output function
                (lambda (partial-response)
-                 (save-excursion
-                   (let ((inhibit-read-only t))
-                     ;; Replace placeholder with response
-                     (delete-region placeholder-start placeholder-end)
-                     (goto-char placeholder-start)
-                     (insert "\n\n")
-                     (insert partial-response)
-                     (setq placeholder-end (point)))))
+                 (let ((inhibit-read-only t))
+                   ;; Replace placeholder with response
+                   (delete-region placeholder-start placeholder-end)
+                   (goto-char placeholder-start)
+                   (insert "\n\n")
+                   (insert partial-response)
+                   (setq placeholder-end (point))
+                   ;; Move cursor to the end to follow the streaming response
+                   (goto-char placeholder-end)))
                ;; Complete function
                (lambda (_full-response)
                  (save-excursion
