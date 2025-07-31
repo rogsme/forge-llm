@@ -120,6 +120,9 @@ INSTRUCTIONS:
 5. Focus on logic and functionality changes, not test or formatting details.
 6. Use bullet points for lists when appropriate.
 
+Source Branch: %s
+Target Branch: %s
+
 %s
 
 Git diff:
@@ -473,6 +476,8 @@ Returns a cons cell with (prompt . debug-info) or nil if preparation fails."
         (when (and diff-output template-content)
           (let* ((pr-section (format "PR template:\n%s" template-content))
                  (formatted-prompt (format forge-llm-pr-description-prompt
+                                           head
+                                           base
                                            pr-section
                                            (or diff-output "[No diff available]"))))
 
